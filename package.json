@@ -1,0 +1,20 @@
+{
+  "name": "poker-backend",
+  "version": "1.0.0",
+  "description": "Backend for Texas Hold'em Poker (Yandex Games). Replaces Firebase RTDB with a REST + SSE API and persistent SQLite storage.",
+  "type": "module",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "start": "node --enable-source-maps src/server.js",
+    "dev": "node --watch --enable-source-maps src/server.js"
+  },
+  "dependencies": {
+    "compression": "^1.7.4",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "morgan": "^1.10.0"
+  }
+}

@@ -1,0 +1,41 @@
+# Render Blueprint: https://render.com/docs/blueprint-spec
+#
+# Apply via:
+#   render.com -> New -> Blueprint -> "Connect repo" -> select this repo -> apply
+#
+# After apply, Render will create:
+#   1) A Node Web Service running src/server.js
+#   2) A 1 GB Persistent Disk mounted at /var/data (where poker.db lives)
+#
+# Free plan note: Web Service free plan sleeps after ~15 min idle and has
+# limited CPU. For an always-on poker backend, pick the "Starter" plan.
+
+services:
+  - type: web
+    name: poker-backend
+    runtime: node
+    plan: starter              # change to "free" if you don't mind sleep/idle
+    region: oregon              # nearest EU region: frankfurt
+    branch: main
+    rootDir: .
+    buildCommand: npm install --omit=dev
+    startCommand: npm start
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 22.17.0
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DB_PATH
+        value: /var/data/poker.db
+      - key: ALLOWED_ORIGINS
+        value: "*"
+      - key: SSE_HEARTBEAT_MS
+        value: 15000
+    disk:
+      name: poker-data
+      mountPath: /var/data
+      sizeGB: 1
