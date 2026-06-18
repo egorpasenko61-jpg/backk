@@ -9,10 +9,18 @@ import express from 'express';
 import cors from 'cors';
 import compression from 'compression';
 import morgan from 'morgan';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { initDb, closeDb } from './lib/db.js';
 import tablesRouter from './routes/tables.js';
 import leaderboardRouter from './routes/leaderboard.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname  = path.dirname(__filename);
+// `client/` sits one level up from `src/`. We resolve it relative to the
+// compiled entry so the server works no matter where `node` is invoked from.
+const CLIENT_DIR = path.resolve(__dirname, '..', 'client');
 
 const PORT = Number(process.env.PORT) || 10000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
@@ -45,6 +53,24 @@ app.use(cors(corsOptions));
 app.use(compression());
 app.use(express.json({ limit: '128kb' })); // tables are tiny; cap the body
 app.use(morgan(NODE_ENV === 'production' ? 'combined' : 'dev'));
+
+// ─── Static client (so the same Express process can serve the Yandex
+// Games build as well as the API) ─────────────────────────────────────────
+app.use(express.static(CLIENT_DIR, {
+  // The client uses `?api=...` / `window.POKER_API_BASE` to point at the
+  // backend; with same-origin serving the default `location.origin` already
+  // matches the API. index.html is implicit for `/`.
+  index: 'index.html',
+  // Long cache for the engine + game bundles, no cache for HTML so deploys
+  // pick up new code right away.
+  setHeaders(res, filePath) {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache');
+    } else {
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+    }
+  },
+}));
 
 // ─── Health & meta ────────────────────────────────────────────────────────
 app.get('/', (_req, res) => {
